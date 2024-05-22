@@ -95,14 +95,13 @@ void PurrticoAudioProcessor::changeProgramName(int index, const juce::String &ne
 void PurrticoAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
-    // initialisation that you need..
     // set up filters
     lastSampleRate = static_cast<float>(sampleRate);
     float smoothSlow{0.1f};
     float smoothFast{0.0005f};
-    gainSmooth.reset(sampleRate, smoothFast);
     frequencySmooth.reset(sampleRate, smoothFast);
     qfactorSmooth.reset(sampleRate, smoothFast);
+    gainSmooth.reset(sampleRate, smoothFast);
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
@@ -144,7 +143,7 @@ bool PurrticoAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void PurrticoAudioProcessor::updateFilter()
 {
-    *peakingEqualizer.state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(lastSampleRate, 4800.0f, 1.0f, 1.0f);
+    *peakingEqualizer.state = juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
 }
 
 void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
@@ -169,29 +168,75 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     auto bufferSize = buffer.getNumSamples();
     // prepare audio buffers
     inputBuffer.setSize(totalNumInputChannels, bufferSize);
-    outputBuffer.setSize(totalNumOutputChannels, bufferSize);
     // set up dsp elements
     juce::dsp::AudioBlock<float> inputBlock(inputBuffer);
-    // update filters
-    float frequencyValue = *apvts.getRawParameterValue("FREQUENCY");
+    // read smoothed parameters
+    float frequencyValue = *apvts.getRawParameterValue("FREQ");
     frequencySmooth.setTargetValue(frequencyValue);
-    nextFrequencyValue = frequencySmooth.getNextValue();
-    float gainValue = *apvts.getRawParameterValue("GAIN");
-    gainSmooth.setTargetValue(gainValue);
-    nextGainValue = gainSmooth.getNextValue();
+    frequency = frequencySmooth.getNextValue();
     float qfactorValue = *apvts.getRawParameterValue("QFACTOR");
     qfactorSmooth.setTargetValue(qfactorValue);
-    nextQfactorValue = qfactorSmooth.getNextValue();
+    qfactor = qfactorSmooth.getNextValue();
+    float gainValue = *apvts.getRawParameterValue("GAIN");
+    gainSmooth.setTargetValue(gainValue);
+    gain = gainSmooth.getNextValue();
+    // calculate filter coefficients
+    auto pi = juce::MathConstants<float>::pi;
+    auto e = juce::MathConstants<float>::euler;
+    //frequency = 4800.0f;
+    //gain = 9.0f;
+    //qfactor = 1.0f;
+    auto w0 = 2 * pi * frequency / lastSampleRate;
+    auto q = 1 / (2 * qfactor);
+    auto G = pow(10, gain / 20);
+
+    a0 = 1.0f;
+    if (q <= 1.0f)
+    {
+        a1 = -2 * (pow(e, -1 * q * w0)) * cos(sqrt(1 - pow(q, 2)) * w0);
+    }
+    else
+    {
+        a1 = -2 * (pow(e, -1 * q * w0)) * cosh(sqrt(pow(q, 2) - 1) * w0);
+    }
+    a2 = pow(e, -2 * q * w0);
+
+    auto p0 = 1 - pow(sin(w0 / 2), 2);
+    auto p1 = pow(sin(w0 / 2), 2);
+    auto p2 = 4 * p0 * p1;
+
+    auto A0 = pow(1 + a1 + a2, 2);
+    auto A1 = pow(1 - a1 + a2, 2);
+    auto A2 = -4 * a2;
+
+    auto R1 = (A0 * p0 + A1 * p1 + A2 * p2) * pow(G, 2);
+    auto R2 = (-1 * A0 + A1 + 4 * (p0 - p1) * A2) * pow(G, 2);
+
+    auto B0 = A0;
+    auto B2 = (R1 - R2 * p1 - B0) / (4 * pow(p1, 2));
+    auto B1 = R2 + B0 + 4 * (p1 - p0) * B2;
+
+    auto W = 0.5 * (sqrt(B0) + sqrt(B1));
+    b0 = 0.5 * (W + sqrt(pow(W, 2) + B2));
+    b1 = 0.5 * (sqrt(B0) - sqrt(B1));
+    b2 = -1 * B2 / (4 * b0);
+
+    // update filters
     updateFilter();
     // clear buffers
-    for (auto i = 0; i < totalNumOutputChannels; ++i)
-        outputBuffer.clear(i, 0, bufferSize);
-    // process input buffer
-    peakingEqualizer.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
-    // copy input signal to output buffer
-    for (int channel = 0; channel < totalNumInputChannels; channel++)
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        inputBuffer.clear(channel, 0, bufferSize);
+    // copy audio buffer to inputBuffer
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        outputBuffer.copyFrom(channel, 0, inputBuffer, channel, 0, bufferSize);
+        inputBuffer.copyFrom(channel, 0, buffer, channel, 0, bufferSize);
+    }
+    // apply vicanek filter
+    peakingEqualizer.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+    // write input buffer back to main buffer
+    for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+    {
+        buffer.copyFrom(channel, 0, inputBuffer, channel, 0, bufferSize);
     }
 }
 
@@ -240,7 +285,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PurrticoAudioProcessor::crea
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> parameters;
 
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", -12.0f, 12.0f, 0.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQUENCY", "Frequency", 100.0f, 10000.0f, 4800.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "Qfactor", 0.1f, 4.0f, 1.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ", "Frequency", 1800.0f, 16000.0f, 6000.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "QFactor", 0.57f, 4.12f, 1.63f));
     return {parameters.begin(), parameters.end()};
 }

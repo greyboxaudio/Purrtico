@@ -62,18 +62,23 @@ public:
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
     juce::AudioBuffer<float> inputBuffer;
-    juce::AudioBuffer<float> outputBuffer;
 
-    juce::LinearSmoothedValue<float> gainSmooth{};
     juce::LinearSmoothedValue<float> frequencySmooth{};
     juce::LinearSmoothedValue<float> qfactorSmooth{};
- 
+    juce::LinearSmoothedValue<float> gainSmooth{};
+    
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizer;
 
+    float frequency{};
+    float qfactor{};
+    float gain{};
     float lastSampleRate{};
-    float nextGainValue{};
-    float nextFrequencyValue{};
-    float nextQfactorValue{};
+    float a0{};
+    float a1{};
+    float a2{};
+    float b0{};
+    float b1{};
+    float b2{};
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PurrticoAudioProcessor)
 };

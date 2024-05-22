@@ -27,17 +27,17 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
+    juce::Slider qfactorSlider;
     juce::Slider gainSlider;
     juce::Slider frequencySlider;
-    juce::Slider qfactorSlider;
 
+    juce::Label qfactorLabel;
     juce::Label gainLabel;
     juce::Label frequencyLabel;
-    juce::Label qfactorLabel;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> frequencySliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> qfactorSliderAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> frequencySliderAttachment;
     PurrticoAudioProcessor& audioProcessor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PurrticoAudioProcessorEditor)

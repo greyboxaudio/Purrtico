@@ -27,6 +27,7 @@ project(PURRTICO VERSION 0.1)
 #find_package(JUCE CONFIG REQUIRED)        # If you've installed JUCE to your system
 # or
 add_subdirectory(libs/JUCE)                    # If you've put JUCE in a subdirectory called JUCE
+add_subdirectory(libs/clap-juce-extensions EXCLUDE_FROM_ALL)
 add_subdirectory(source)
 # If you are building a VST2 or AAX plugin, CMake needs to be told where to find these SDKs on your
 # system. This setup should be done before calling `juce_add_plugin`.
@@ -50,13 +51,20 @@ juce_add_plugin(PURRTICO
     NEEDS_MIDI_OUTPUT FALSE              # Does the plugin need midi output?
     IS_MIDI_EFFECT FALSE                 # Is this plugin a MIDI effect?
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE    # Does the editor need keyboard focus?
-    VST3_CATEGORIES Reverb
+    VST3_CATEGORIES EQ
     COPY_PLUGIN_AFTER_BUILD TRUE        # Should the plugin be installed to a default location after building?
     PLUGIN_MANUFACTURER_CODE Gbox               # A four-character manufacturer id with at least one upper-case character
-    PLUGIN_CODE PTCO                         # A unique four-character plugin id with exactly one upper-case character
+    PLUGIN_CODE Ptco                         # A unique four-character plugin id with exactly one upper-case character
                                                 # GarageBand 10.3 requires the first letter to be upper-case, and the remaining letters to be lower-case
     FORMATS VST3                  # The formats to build. Other valid formats are: AAX Unity VST AU AUv3
-    PRODUCT_NAME "Purrtico")        # The name of the final executable, which can differ from the target name
+    PRODUCT_NAME "Purrtico5033")        # The name of the final executable, which can differ from the target name
+
+    clap_juce_extensions_plugin(
+    TARGET PURRTICO
+    CLAP_ID "com.greyboxaudio.purrtico5033"
+    CLAP_FEATURES audio-effect equalizer stereo
+    CLAP_PROCESS_EVENTS_RESOLUTION_SAMPLES 64
+)
 
 # `juce_generate_juce_header` will create a JuceHeader.h for a given target, which will be generated
 # into your build tree. This should be included with `#include <JuceHeader.h>`. The include path for
@@ -111,6 +119,7 @@ target_link_libraries(PURRTICO
         # AudioPluginData           # If we'd created a binary data target, we'd link to it here
         juce::juce_audio_utils
         juce::juce_dsp
+        clap_juce_extensions
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
