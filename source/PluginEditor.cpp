@@ -10,93 +10,47 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-SG323AudioProcessorEditor::SG323AudioProcessorEditor(SG323AudioProcessor& p)
+PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    inputGainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    inputGainSlider.setTextBoxIsEditable(false);
-    addAndMakeVisible(inputGainSlider);
-    inputGainSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "INPUT", inputGainSlider);
-    addAndMakeVisible(inputGainLabel);
-    inputGainLabel.setText("INPUT", juce::dontSendNotification);
-    inputGainLabel.attachToComponent(&inputGainSlider, false);
-    inputGainLabel.setJustificationType(juce::Justification::centred);
+    gainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    gainSlider.setTextBoxIsEditable(false);
+    addAndMakeVisible(gainSlider);
+    gainSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "GAIN", gainSlider);
+    addAndMakeVisible(gainLabel);
+    gainLabel.setText("Gain", juce::dontSendNotification);
+    gainLabel.attachToComponent(&gainSlider, false);
+    gainLabel.setJustificationType(juce::Justification::centred);
 
-    highPassSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    highPassSlider.setTextBoxIsEditable(false);
-    addAndMakeVisible(highPassSlider);
-    highPassSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "HPF", highPassSlider);
-    addAndMakeVisible(highPassLabel);
-    highPassLabel.setText("HPF", juce::dontSendNotification);
-    highPassLabel.attachToComponent(&highPassSlider, false);
-    highPassLabel.setJustificationType(juce::Justification::centred);
+    frequencySlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    frequencySlider.setTextBoxIsEditable(false);
+    addAndMakeVisible(frequencySlider);
+    frequencySliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "FREQUENCY", frequencySlider);
+    addAndMakeVisible(frequencyLabel);
+    frequencyLabel.setText("Frequency", juce::dontSendNotification);
+    frequencyLabel.attachToComponent(&frequencySlider, false);
+    frequencyLabel.setJustificationType(juce::Justification::centred);
 
-    lowPassSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    lowPassSlider.setTextBoxIsEditable(false);
-    addAndMakeVisible(lowPassSlider);
-    lowPassSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "LPF", lowPassSlider);
-    addAndMakeVisible(lowPassLabel);
-    lowPassLabel.setText("LPF", juce::dontSendNotification);
-    lowPassLabel.attachToComponent(&lowPassSlider, false);
-    lowPassLabel.setJustificationType(juce::Justification::centred);
+    qfactorSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    qfactorSlider.setTextBoxIsEditable(false);
+    addAndMakeVisible(qfactorSlider);
+    qfactorSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "QFACTOR", qfactorSlider);
+    addAndMakeVisible(qfactorLabel);
+    qfactorLabel.setText("Qfactor", juce::dontSendNotification);
+    qfactorLabel.attachToComponent(&qfactorSlider, false);
+    qfactorLabel.setJustificationType(juce::Justification::centred);
 
-    predelaySlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    predelaySlider.setTextBoxIsEditable(false);
-    addAndMakeVisible(predelaySlider);
-    predelaySliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "PREDELAY", predelaySlider);
-    addAndMakeVisible(predelayLabel);
-    predelayLabel.setText("PREDLY", juce::dontSendNotification);
-    predelayLabel.attachToComponent(&predelaySlider, false);
-    predelayLabel.setJustificationType(juce::Justification::centred);
-
-    decaySlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    decaySlider.setTextBoxIsEditable(false);
-    addAndMakeVisible(decaySlider);
-    decaySliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DECAY", decaySlider);
-    addAndMakeVisible(decayLabel);
-    decayLabel.setText("DECAY", juce::dontSendNotification);
-    decayLabel.attachToComponent(&decaySlider, false);
-    decayLabel.setJustificationType(juce::Justification::centred);
-
-    wetDrySlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    wetDrySlider.setTextBoxIsEditable(false);
-    addAndMakeVisible(wetDrySlider);
-    wetDrySliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "WETDRY", wetDrySlider);
-    addAndMakeVisible(wetDryLabel);
-    wetDryLabel.setText("MIX", juce::dontSendNotification);
-    wetDryLabel.attachToComponent(&wetDrySlider, false);
-    wetDryLabel.setJustificationType(juce::Justification::centred);
-
-    noiseButton.setButtonText("Noise");
-    addAndMakeVisible(noiseButton);
-    noiseButtonAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "NOISE", noiseButton);
-
-    bitReduceButton.setButtonText("16bit");
-    addAndMakeVisible(bitReduceButton);
-    bitReduceButtonAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "BITREDUCE", bitReduceButton);
-
-    programBox.addItem("Plate 1", 1);
-    programBox.addItem("Plate 2", 2);
-    programBox.addItem("Chamber", 3);
-    programBox.addItem("Small Hall", 4);
-    programBox.addItem("Hall", 5);
-    programBox.addItem("Large Hall", 6);
-    programBox.addItem("Cathedral", 7);
-    programBox.addItem("Canyon", 8);
-    programBox.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(programBox);
-    programBoxAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "PROGRAM", programBox);
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(475, 350);
 }
 
-SG323AudioProcessorEditor::~SG323AudioProcessorEditor()
+PurrticoAudioProcessorEditor::~PurrticoAudioProcessorEditor()
 {
 }
 
 //==============================================================================
-void SG323AudioProcessorEditor::paint(juce::Graphics& g)
+void PurrticoAudioProcessorEditor::paint(juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
@@ -106,18 +60,13 @@ void SG323AudioProcessorEditor::paint(juce::Graphics& g)
     g.drawFittedText ("v0.6.3", getLocalBounds(), juce::Justification::bottomRight, 1);
 }
 
-void SG323AudioProcessorEditor::resized()
+void PurrticoAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     juce::Rectangle<int> bounds = getLocalBounds();
-    noiseButton.setBounds(25,25,100,50);
-    bitReduceButton.setBounds(100,25,100,50);
-    programBox.setBounds(300, 25, 150, 50);
-    inputGainSlider.setBounds(25, 120, 50, 200);
-    highPassSlider.setBounds(100, 120, 50, 200);
-    lowPassSlider.setBounds(175, 120, 50, 200);
-    predelaySlider.setBounds(250, 120, 50, 200);
-    decaySlider.setBounds(325, 120, 50, 200);
-    wetDrySlider.setBounds(400, 120, 50, 200);
+    gainSlider.setBounds(25, 120, 50, 200);
+    frequencySlider.setBounds(100, 120, 50, 200);
+    qfactorSlider.setBounds(175, 120, 50, 200);
+
 }

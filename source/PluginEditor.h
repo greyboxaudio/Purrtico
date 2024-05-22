@@ -14,11 +14,11 @@
 //==============================================================================
 /**
 */
-class SG323AudioProcessorEditor : public juce::AudioProcessorEditor
+class PurrticoAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
-    SG323AudioProcessorEditor(SG323AudioProcessor&);
-    ~SG323AudioProcessorEditor() override;
+    PurrticoAudioProcessorEditor(PurrticoAudioProcessor&);
+    ~PurrticoAudioProcessorEditor() override;
 
     //==============================================================================
     void paint(juce::Graphics&) override;
@@ -27,33 +27,18 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    juce::ComboBox programBox;
-    juce::Slider predelaySlider;
-    juce::Slider decaySlider;
-    juce::Slider wetDrySlider;
-    juce::Slider highPassSlider;
-    juce::Slider lowPassSlider;
-    juce::Slider inputGainSlider;
-    juce::ToggleButton noiseButton;
-    juce::ToggleButton bitReduceButton;
+    juce::Slider gainSlider;
+    juce::Slider frequencySlider;
+    juce::Slider qfactorSlider;
 
-    juce::Label predelayLabel;
-    juce::Label decayLabel;
-    juce::Label wetDryLabel;
-    juce::Label highPassLabel;
-    juce::Label lowPassLabel;
-    juce::Label inputGainLabel;
+    juce::Label gainLabel;
+    juce::Label frequencyLabel;
+    juce::Label qfactorLabel;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> programBoxAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> decaySliderAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> predelaySliderAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> wetDrySliderAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> highPassSliderAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lowPassSliderAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainSliderAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> noiseButtonAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bitReduceButtonAttachment;
-    SG323AudioProcessor& audioProcessor;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> frequencySliderAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> qfactorSliderAttachment;
+    PurrticoAudioProcessor& audioProcessor;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SG323AudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PurrticoAudioProcessorEditor)
 };
