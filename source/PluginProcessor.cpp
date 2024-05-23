@@ -191,7 +191,8 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     auto e = juce::MathConstants<float>::euler;
     
     auto w0 = 2 * pi * frequency / lastSampleRate;
-    auto q = 1 / (2 * qfactor);
+    auto A = sqrt(pow(10, gain / 20));
+    auto q = (1 / (2 * qfactor * A));
     auto G = pow(10, gain / 20);
 
     a0 = 1.0f;
