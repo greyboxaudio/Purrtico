@@ -74,7 +74,7 @@ void PurrticoAudioProcessorEditor::resized()
     // subcomponents in your editor..
     juce::Rectangle<int> bounds = getLocalBounds();
     inputGainSlider.setBounds(25, 120, 50, 200);
-    frequencySlider.setBounds(175, 120, 50, 200);
-    qfactorSlider.setBounds(250, 120, 50, 200);
-    gainSlider.setBounds(325, 120, 50, 200);
+    gainSlider.setBounds(175, 120, 50, 200);
+    frequencySlider.setBounds(250, 120, 50, 200);
+    qfactorSlider.setBounds(325, 120, 50, 200);
 }

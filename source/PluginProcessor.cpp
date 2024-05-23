@@ -189,9 +189,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // calculate filter coefficients
     auto pi = juce::MathConstants<float>::pi;
     auto e = juce::MathConstants<float>::euler;
-    //frequency = 4800.0f;
-    //gain = 9.0f;
-    //qfactor = 1.0f;
+    
     auto w0 = 2 * pi * frequency / lastSampleRate;
     auto q = 1 / (2 * qfactor);
     auto G = pow(10, gain / 20);
@@ -301,6 +299,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout PurrticoAudioProcessor::crea
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("INPUT", "inputGain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ", "Frequency", 1800.0f, 16000.0f, 6000.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "QFactor", 0.57f, 4.12f, 1.63f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "QFactor", 0.1f, 5.0f, 2.0f));
     return {parameters.begin(), parameters.end()};
 }
