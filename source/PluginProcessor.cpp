@@ -299,6 +299,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout PurrticoAudioProcessor::crea
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("INPUT", "inputGain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ", "Frequency", 2000.0f, 16000.0f, 8000.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "QFactor", 0.1f, 5.0f, 1.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "QFactor", 0.1f, 4.0f, 1.0f));
     return {parameters.begin(), parameters.end()};
 }
