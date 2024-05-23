@@ -1,2 +1,2 @@
-Based on "Matched Second Order Digital Filters" by Vicanek, Martin (2016)
+Based on Vicanek, Martin (2016): Matched Second Order Digital Filters.
 https://vicanek.de/articles/BiquadFits.pdf
