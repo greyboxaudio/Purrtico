@@ -27,14 +27,17 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
+    juce::Slider inputGainSlider;
     juce::Slider qfactorSlider;
     juce::Slider gainSlider;
     juce::Slider frequencySlider;
 
+    juce::Label inputGainLabel;
     juce::Label qfactorLabel;
     juce::Label gainLabel;
     juce::Label frequencyLabel;
 
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> qfactorSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> frequencySliderAttachment;

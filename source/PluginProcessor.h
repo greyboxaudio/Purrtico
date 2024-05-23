@@ -63,12 +63,16 @@ private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
     juce::AudioBuffer<float> inputBuffer;
 
+    juce::LinearSmoothedValue<float> inputGainSmooth{};
     juce::LinearSmoothedValue<float> frequencySmooth{};
     juce::LinearSmoothedValue<float> qfactorSmooth{};
     juce::LinearSmoothedValue<float> gainSmooth{};
-    
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizer;
 
+    juce::dsp::Gain<float> gainModule;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizer;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> highShelf;
+
+    float inputGain{};
     float frequency{};
     float qfactor{};
     float gain{};

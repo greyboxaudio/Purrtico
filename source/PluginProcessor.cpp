@@ -95,10 +95,11 @@ void PurrticoAudioProcessor::changeProgramName(int index, const juce::String &ne
 void PurrticoAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
-    // set up filters
+    // set up filters & dsp elements
     lastSampleRate = static_cast<float>(sampleRate);
     float smoothSlow{0.1f};
     float smoothFast{0.0005f};
+    inputGainSmooth.reset(sampleRate, smoothFast);
     frequencySmooth.reset(sampleRate, smoothFast);
     qfactorSmooth.reset(sampleRate, smoothFast);
     gainSmooth.reset(sampleRate, smoothFast);
@@ -106,8 +107,12 @@ void PurrticoAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
     spec.numChannels = getTotalNumOutputChannels();
+    gainModule.prepare(spec);
+    gainModule.reset();
     peakingEqualizer.prepare(spec);
     peakingEqualizer.reset();
+    //highShelf.prepare(spec);
+    //highShelf.reset();
 }
 
 void PurrticoAudioProcessor::releaseResources()
@@ -144,6 +149,7 @@ bool PurrticoAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 void PurrticoAudioProcessor::updateFilter()
 {
     *peakingEqualizer.state = juce::dsp::IIR::Coefficients<float>(b0, b1, b2, a0, a1, a2);
+    //*highShelf.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(lastSampleRate, frequency, qfactor, gain);
 }
 
 void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
@@ -231,8 +237,16 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     {
         inputBuffer.copyFrom(channel, 0, buffer, channel, 0, bufferSize);
     }
+    // apply input gain
+    float inputGainValue = *apvts.getRawParameterValue("INPUT");
+    inputGainSmooth.setTargetValue(inputGainValue);
+    inputGain = inputGainSmooth.getNextValue();
+    inputGain = pow(10, inputGain / 20);
+    gainModule.setGainLinear(inputGain);
+    gainModule.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
     // apply vicanek filter
     peakingEqualizer.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+    //highShelf.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
     // write input buffer back to main buffer
     for (int channel = 0; channel < totalNumOutputChannels; ++channel)
     {
@@ -284,6 +298,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PurrticoAudioProcessor::crea
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> parameters;
 
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("INPUT", "inputGain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ", "Frequency", 1800.0f, 16000.0f, 6000.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR", "QFactor", 0.57f, 4.12f, 1.63f));

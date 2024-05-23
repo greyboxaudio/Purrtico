@@ -13,6 +13,15 @@
 PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    inputGainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    inputGainSlider.setTextBoxIsEditable(false);
+    addAndMakeVisible(inputGainSlider);
+    inputGainSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "INPUT", inputGainSlider);
+    addAndMakeVisible(inputGainLabel);
+    inputGainLabel.setText("INPUT", juce::dontSendNotification);
+    inputGainLabel.attachToComponent(&inputGainSlider, false);
+    inputGainLabel.setJustificationType(juce::Justification::centred);
+
     frequencySlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
     frequencySlider.setTextBoxIsEditable(false);
     addAndMakeVisible(frequencySlider);
@@ -56,7 +65,7 @@ void PurrticoAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colours::white);
     g.setFont(15.0f);
-    g.drawFittedText ("v0.1", getLocalBounds(), juce::Justification::bottomRight, 1);
+    g.drawFittedText ("v0.1a", getLocalBounds(), juce::Justification::bottomRight, 1);
 }
 
 void PurrticoAudioProcessorEditor::resized()
@@ -64,6 +73,7 @@ void PurrticoAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     juce::Rectangle<int> bounds = getLocalBounds();
+    inputGainSlider.setBounds(25, 120, 50, 200);
     frequencySlider.setBounds(175, 120, 50, 200);
     qfactorSlider.setBounds(250, 120, 50, 200);
     gainSlider.setBounds(325, 120, 50, 200);
