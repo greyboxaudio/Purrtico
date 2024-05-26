@@ -234,8 +234,8 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     gainSmoothH.setTargetValue(gainValueH);
     gainH = gainSmoothH.getNextValue();
     // calculate filter coefficients
-    auto pi = juce::MathConstants<double>::pi;
-    auto e = juce::MathConstants<double>::euler;
+    double pi = juce::MathConstants<double>::pi;
+    double e = juce::MathConstants<double>::euler;
 
     w0 = 2 * pi * frequencyLM / lastSampleRate;
     G = pow(10, gainLM / 20);
@@ -324,6 +324,14 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_H[1] = 0.5 * (sqrt(B0) - sqrt(B1));
     coeffs_H[2] = -1 * B2 / (4 * coeffs_H[0]);
 
+    //cast coefficients to float
+    for (auto i = 0; i < 6; i++)
+    {
+        coeffs_L[i] = static_cast<float>(coeffs_L[i]);
+        coeffs_LM[i] = static_cast<float>(coeffs_LM[i]);
+        coeffs_HM[i] = static_cast<float>(coeffs_HM[i]);
+        coeffs_H[i] = static_cast<float>(coeffs_H[i]);
+    }
     // update filters
     updateFilter();
     // clear buffers
@@ -334,13 +342,6 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     {
         inputBuffer.copyFrom(channel, 0, buffer, channel, 0, bufferSize);
     }
-    // apply input gain
-    float inputGainValue = *apvts.getRawParameterValue("INPUT");
-    inputGainSmooth.setTargetValue(inputGainValue);
-    inputGain = inputGainSmooth.getNextValue();
-    inputGain = pow(10, inputGain / 20);
-    gainModule.setGainLinear(inputGain);
-    gainModule.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
     // apply filter
     bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
     if (peakButtonStateL == true)
@@ -360,6 +361,15 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     }
     peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
     peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+
+    // apply input gain
+    float inputGainValue = *apvts.getRawParameterValue("INPUT");
+    inputGainSmooth.setTargetValue(inputGainValue);
+    inputGain = inputGainSmooth.getNextValue();
+    inputGain = pow(10, inputGain / 20);
+    gainModule.setGainLinear(inputGain);
+    gainModule.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+
     // write input buffer back to main buffer
     for (int channel = 0; channel < totalNumOutputChannels; ++channel)
     {
