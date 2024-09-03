@@ -61,7 +61,7 @@ public:
 
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
-    juce::AudioBuffer<float> inputBuffer;
+    juce::AudioBuffer<double> inputBuffer;
 
     juce::LinearSmoothedValue<float> inputGainSmooth{};
     juce::LinearSmoothedValue<float> frequencySmoothL{};
@@ -77,13 +77,13 @@ private:
     juce::LinearSmoothedValue<float> qfactorSmoothH{};
     juce::LinearSmoothedValue<float> gainSmoothH{};
 
-    juce::dsp::Gain<float> gainModule;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizerL;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizerLM;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizerHM;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> peakingEqualizerH;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> lowShelf;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients <float>> highShelf;
+    juce::dsp::Gain<double> gainModule;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerL;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerLM;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerHM;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerH;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> lowShelf;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> highShelf;
 
     float inputGain{};
     float frequencyL{};

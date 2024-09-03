@@ -164,12 +164,12 @@ bool PurrticoAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void PurrticoAudioProcessor::updateFilter()
 {
-    *peakingEqualizerL.state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(lastSampleRate, frequencyL, 1 / (2 * (2.1f - qfactorL)), pow(10, gainL / 20));
-    *lowShelf.state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(lastSampleRate, frequencyL, 1 / (2 * qfactorL), pow(10, gainL / 20));
-    *peakingEqualizerLM.state = juce::dsp::IIR::Coefficients<float>(coeffs_LM[0], coeffs_LM[1], coeffs_LM[2], coeffs_LM[3], coeffs_LM[4], coeffs_LM[5]);
-    *peakingEqualizerHM.state = juce::dsp::IIR::Coefficients<float>(coeffs_HM[0], coeffs_HM[1], coeffs_HM[2], coeffs_HM[3], coeffs_HM[4], coeffs_HM[5]);
-    *peakingEqualizerH.state = juce::dsp::IIR::Coefficients<float>(coeffs_H[0], coeffs_H[1], coeffs_H[2], coeffs_H[3], coeffs_H[4], coeffs_H[5]);
-    *highShelf.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(lastSampleRate, frequencyH, 1 / (2 * qfactorH), pow(10, gainH / 20));
+    *peakingEqualizerL.state = *juce::dsp::IIR::Coefficients<double>::makePeakFilter(lastSampleRate, frequencyL, 1 / (2 * (2.1f - qfactorL)), pow(10, gainL / 20));
+    *lowShelf.state = *juce::dsp::IIR::Coefficients<double>::makeLowShelf(lastSampleRate, frequencyL, 1 / (2 * qfactorL), pow(10, gainL / 20));
+    *peakingEqualizerLM.state = juce::dsp::IIR::Coefficients<double>(coeffs_LM[0], coeffs_LM[1], coeffs_LM[2], coeffs_LM[3], coeffs_LM[4], coeffs_LM[5]);
+    *peakingEqualizerHM.state = juce::dsp::IIR::Coefficients<double>(coeffs_HM[0], coeffs_HM[1], coeffs_HM[2], coeffs_HM[3], coeffs_HM[4], coeffs_HM[5]);
+    *peakingEqualizerH.state = juce::dsp::IIR::Coefficients<double>(coeffs_H[0], coeffs_H[1], coeffs_H[2], coeffs_H[3], coeffs_H[4], coeffs_H[5]);
+    *highShelf.state = *juce::dsp::IIR::Coefficients<double>::makeHighShelf(lastSampleRate, frequencyH, 1 / (2 * qfactorH), pow(10, gainH / 20));
 }
 
 void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
@@ -195,7 +195,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // prepare audio buffers
     inputBuffer.setSize(totalNumInputChannels, bufferSize);
     // set up dsp elements
-    juce::dsp::AudioBlock<float> inputBlock(inputBuffer);
+    juce::dsp::AudioBlock<double> inputBlock(inputBuffer);
     // read smoothed parameters
     float frequencyValueL = *apvts.getRawParameterValue("FREQ_L");
     frequencySmoothL.setTargetValue(frequencyValueL);
@@ -295,43 +295,107 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_HM[1] = 0.5 * (sqrt(B0) - sqrt(B1));
     coeffs_HM[2] = -1 * B2 / (4 * coeffs_HM[0]);
 
-    w0 = 2 * pi * frequencyH / lastSampleRate;
-    G = pow(10, gainH / 20);
-    q = 1 / (2 * sqrt(G) * qfactorH);
-    coeffs_H[3] = 1.0f;
-    if (q <= 1.0f)
+    bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
+    if (peakButtonStateH == true)
     {
-        coeffs_H[4] = -2 * pow(e, -1 * q * w0) * cos(sqrt(1 - pow(q, 2)) * w0);
+        w0 = 2 * pi * frequencyH / lastSampleRate;
+        G = pow(10, gainH / 20);
+        q = 1 / (2 * sqrt(G) * qfactorH);
+        coeffs_H[3] = 1.0f;
+        if (q <= 1.0f)
+        {
+            coeffs_H[4] = -2 * pow(e, -1 * q * w0) * cos(sqrt(1 - pow(q, 2)) * w0);
+        }
+        else
+        {
+            coeffs_H[4] = -2 * pow(e, -1 * q * w0) * cosh(sqrt(pow(q, 2) - 1) * w0);
+        }
+        coeffs_H[5] = pow(e, -2 * q * w0);
+        p0 = 1 - pow(sin(w0 / 2), 2);
+        p1 = pow(sin(w0 / 2), 2);
+        p2 = 4 * p0 * p1;
+        A0 = pow(1 + coeffs_H[4] + coeffs_H[5], 2);
+        A1 = pow(1 - coeffs_H[4] + coeffs_H[5], 2);
+        A2 = -4 * coeffs_H[5];
+        R1 = (A0 * p0 + A1 * p1 + A2 * p2) * pow(G, 2);
+        R2 = (-1 * A0 + A1 + 4 * (p0 - p1) * A2) * pow(G, 2);
+        B0 = A0;
+        B2 = (R1 - R2 * p1 - B0) / (4 * pow(p1, 2));
+        B1 = R2 + B0 + 4 * (p1 - p0) * B2;
+        W = 0.5 * (sqrt(B0) + sqrt(B1));
+        coeffs_H[0] = 0.5 * (W + sqrt(pow(W, 2) + B2));
+        coeffs_H[1] = 0.5 * (sqrt(B0) - sqrt(B1));
+        coeffs_H[2] = -1 * B2 / (4 * coeffs_H[0]);
     }
     else
     {
-        coeffs_H[4] = -2 * pow(e, -1 * q * w0) * cosh(sqrt(pow(q, 2) - 1) * w0);
+        double fc = frequencyH / lastSampleRate;
+        double gain = (pow(10, (-1 * gainH) / 20));
+        double g;
+        if (abs(1 - gain) < 1e-6)
+        {
+            g = 1.00001;
+        }
+        else
+        {
+            g = gain;
+        }
+        // abbreviations
+        double pihalf = pi * 0.5;
+        double invg = 1.0 / g;
+        // matching gain at Nyquist
+        double fc4 = pow(fc, 4);
+        double hny = (fc4 + g) / (fc4 + invg);
+        // matching gain at f_1
+        double f1 = fc / sqrt(0.160 + 1.543 * fc * fc);
+        double f14 = pow(f1, 4);
+        double h1 = (fc4 + f14 * g) / (fc4 + f14 * invg);
+        double phi1 = pow(sin(pihalf * f1), 2);
+        // matching gain at f_2
+        double f2 = fc / sqrt(0.947 + 3.806 * fc * fc);
+        double f24 = pow(f2, 4);
+        double h2 = (fc4 + f24 * g) / (fc4 + f24 * invg);
+        double phi2 = pow(sin(pihalf * f2), 2);
+        // linear equations coefficients
+        double d1 = (h1 - 1.0) * (1.0 - phi1);
+        double c11 = -phi1 * d1;
+        double c12 = phi1 * phi1 * (hny - h1);
+        double d2 = (h2 - 1.0) * (1.0 - phi2);
+        double c21 = -phi2 * d2;
+        double c22 = phi2 * phi2 * (hny - h2);
+        // linear equations solution
+        double alfa1 = (c22 * d1 - c12 * d2) / (c11 * c22 - c12 * c21);
+        double aa1 = (d1 - c11 * alfa1) / c12;
+        double bb1 = hny * aa1;
+        // compute A_2 and B_2
+        double aa2 = 0.25 * (alfa1 - aa1);
+        double bb2 = 0.25 * (alfa1 - bb1);
+        // compute biquad coefficients scaled with 1/a_0
+        double v = 0.5 * (1.0 + sqrt(aa1));
+        double w = 0.5 * (1.0 + sqrt(bb1));
+        double a0 = 0.5 * (v + sqrt(v * v + aa2));
+        double inva0 = 1.0 / a0;
+        double a1 = (1.0 - v) * inva0;
+        double a2 = -0.25 * aa2 * inva0 * inva0;
+        double b0 = (0.5 * (w + sqrt(w * w + bb2))) * inva0;
+        double b1 = (1.0 - w) * inva0;
+        double b2 = (-0.25 * bb2 / b0) * inva0 * inva0;
+        coeffs_H[0] = 1.0;
+        coeffs_H[1] = a1;
+        coeffs_H[2] = a2;
+        coeffs_H[3] = b0;
+        coeffs_H[4] = b1;
+        coeffs_H[5] = b2;
     }
-    coeffs_H[5] = pow(e, -2 * q * w0);
-    p0 = 1 - pow(sin(w0 / 2), 2);
-    p1 = pow(sin(w0 / 2), 2);
-    p2 = 4 * p0 * p1;
-    A0 = pow(1 + coeffs_H[4] + coeffs_H[5], 2);
-    A1 = pow(1 - coeffs_H[4] + coeffs_H[5], 2);
-    A2 = -4 * coeffs_H[5];
-    R1 = (A0 * p0 + A1 * p1 + A2 * p2) * pow(G, 2);
-    R2 = (-1 * A0 + A1 + 4 * (p0 - p1) * A2) * pow(G, 2);
-    B0 = A0;
-    B2 = (R1 - R2 * p1 - B0) / (4 * pow(p1, 2));
-    B1 = R2 + B0 + 4 * (p1 - p0) * B2;
-    W = 0.5 * (sqrt(B0) + sqrt(B1));
-    coeffs_H[0] = 0.5 * (W + sqrt(pow(W, 2) + B2));
-    coeffs_H[1] = 0.5 * (sqrt(B0) - sqrt(B1));
-    coeffs_H[2] = -1 * B2 / (4 * coeffs_H[0]);
 
-    //cast coefficients to float
-    for (auto i = 0; i < 6; i++)
+    // cast coefficients to float
+    /*for (auto i = 0; i < 6; i++)
     {
         coeffs_L[i] = static_cast<float>(coeffs_L[i]);
         coeffs_LM[i] = static_cast<float>(coeffs_LM[i]);
         coeffs_HM[i] = static_cast<float>(coeffs_HM[i]);
         coeffs_H[i] = static_cast<float>(coeffs_H[i]);
-    }
+    }*/
     // update filters
     updateFilter();
     // clear buffers
@@ -340,27 +404,33 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // copy audio buffer to inputBuffer
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        inputBuffer.copyFrom(channel, 0, buffer, channel, 0, bufferSize);
+        for (int i = 0; i < bufferSize; ++i)
+        {
+            inputBuffer.setSample(channel, i, static_cast<double>(buffer.getSample(channel, i)));
+        }
     }
     // apply filter
     bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
     if (peakButtonStateL == true)
     {
-        peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+        peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     }
-    else{
-        lowShelf.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+    else
+    {
+        lowShelf.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     }
-    bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
+    /*bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
     if (peakButtonStateH == true)
     {
-        peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+        peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     }
-    else{
-        highShelf.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
-    }
-    peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
-    peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+    else
+    {
+        highShelf.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    }*/
+    peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
 
     // apply input gain
     float inputGainValue = *apvts.getRawParameterValue("INPUT");
@@ -368,12 +438,16 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     inputGain = inputGainSmooth.getNextValue();
     inputGain = pow(10, inputGain / 20);
     gainModule.setGainLinear(inputGain);
-    gainModule.process(juce::dsp::ProcessContextReplacing<float>(inputBlock));
+    gainModule.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
 
     // write input buffer back to main buffer
     for (int channel = 0; channel < totalNumOutputChannels; ++channel)
     {
-        buffer.copyFrom(channel, 0, inputBuffer, channel, 0, bufferSize);
+        // buffer.copyFrom(channel, 0, inputBuffer, channel, 0, bufferSize);
+        for (int i = 0; i < bufferSize; ++i)
+        {
+            buffer.setSample(channel, i, static_cast<float>(inputBuffer.getSample(channel, i)));
+        }
     }
 }
 

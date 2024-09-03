@@ -154,7 +154,7 @@ void PurrticoAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colours::white);
     g.setFont(15.0f);
-    g.drawFittedText ("v0.1.2", getLocalBounds(), juce::Justification::bottomRight, 1);
+    g.drawFittedText ("v0.1.3", getLocalBounds(), juce::Justification::bottomRight, 1);
 }
 
 void PurrticoAudioProcessorEditor::resized()
