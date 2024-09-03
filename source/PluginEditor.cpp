@@ -137,6 +137,10 @@ PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcesso
     addAndMakeVisible(peakButtonH);
     peakButtonAttachmentH = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "PEAK_H", peakButtonH);
 
+    /*addAndMakeVisible(versionLabel);
+    versionLabel.setText(__DATE__ " " __TIME__ " " CMAKE_BUILD_TYPE, juce::dontSendNotification);
+    versionLabel.setJustificationType(juce::Justification::centred);*/
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(640, 480);
@@ -154,7 +158,7 @@ void PurrticoAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colours::white);
     g.setFont(15.0f);
-    g.drawFittedText ("v0.1.3", getLocalBounds(), juce::Justification::bottomRight, 1);
+    g.drawFittedText ("v0.2.0", getLocalBounds(), juce::Justification::bottomRight, 1);
 }
 
 void PurrticoAudioProcessorEditor::resized()
@@ -162,6 +166,7 @@ void PurrticoAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     juce::Rectangle<int> bounds = getLocalBounds();
+    //versionLabel.setBounds(10,  10, getWidth() - 20,  30);
     inputGainSlider.setBounds(25, 150, 50, 200);
     peakButtonH.setBounds(25,50,100,50);
     peakButtonL.setBounds(25,375,100,50);

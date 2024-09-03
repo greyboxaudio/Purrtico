@@ -125,10 +125,6 @@ void PurrticoAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     peakingEqualizerHM.reset();
     peakingEqualizerH.prepare(spec);
     peakingEqualizerH.reset();
-    lowShelf.prepare(spec);
-    lowShelf.reset();
-    highShelf.prepare(spec);
-    highShelf.reset();
 }
 
 void PurrticoAudioProcessor::releaseResources()
@@ -164,12 +160,10 @@ bool PurrticoAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void PurrticoAudioProcessor::updateFilter()
 {
-    *peakingEqualizerL.state = *juce::dsp::IIR::Coefficients<double>::makePeakFilter(lastSampleRate, frequencyL, 1 / (2 * (2.1f - qfactorL)), pow(10, gainL / 20));
-    *lowShelf.state = *juce::dsp::IIR::Coefficients<double>::makeLowShelf(lastSampleRate, frequencyL, 1 / (2 * qfactorL), pow(10, gainL / 20));
+    *peakingEqualizerL.state = juce::dsp::IIR::Coefficients<double>(coeffs_L[0], coeffs_L[1], coeffs_L[2], coeffs_L[3], coeffs_L[4], coeffs_L[5]);
     *peakingEqualizerLM.state = juce::dsp::IIR::Coefficients<double>(coeffs_LM[0], coeffs_LM[1], coeffs_LM[2], coeffs_LM[3], coeffs_LM[4], coeffs_LM[5]);
     *peakingEqualizerHM.state = juce::dsp::IIR::Coefficients<double>(coeffs_HM[0], coeffs_HM[1], coeffs_HM[2], coeffs_HM[3], coeffs_HM[4], coeffs_HM[5]);
     *peakingEqualizerH.state = juce::dsp::IIR::Coefficients<double>(coeffs_H[0], coeffs_H[1], coeffs_H[2], coeffs_H[3], coeffs_H[4], coeffs_H[5]);
-    *highShelf.state = *juce::dsp::IIR::Coefficients<double>::makeHighShelf(lastSampleRate, frequencyH, 1 / (2 * qfactorH), pow(10, gainH / 20));
 }
 
 void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
@@ -237,6 +231,48 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     double pi = juce::MathConstants<double>::pi;
     double e = juce::MathConstants<double>::euler;
 
+    // Low Frequency
+    bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
+    double A = pow(10, (-1 * gainL) / 40);
+    w0 = 2 * pi * (frequencyL / lastSampleRate);
+    double sinw0 = sin(w0);
+    double cosw0 = cos(w0);
+    if (peakButtonStateL == true)
+    {
+        double Q = qfactorL;
+        double alpha = sinw0 / (2 * Q);
+        double b0 = 1 + alpha * A;
+        double b1 = -2 * cosw0;
+        double b2 = 1 - alpha * A;
+        double a0 = 1 + alpha / A;
+        double a1 = -2 * cosw0;
+        double a2 = 1 - alpha / A;
+        coeffs_L[0] = a0;
+        coeffs_L[1] = a1;
+        coeffs_L[2] = a2;
+        coeffs_L[3] = b0;
+        coeffs_L[4] = b1;
+        coeffs_L[5] = b2;
+    }
+    else
+    {
+        double Q = 0.707;
+        double alpha = sinw0 / (2 * Q);
+        double b0 = A * ((A + 1) - (A - 1) * cosw0 + 2 * sqrt(A) * alpha);
+        double b1 = 2 * A * ((A - 1) - (A + 1) * cosw0);
+        double b2 = A * ((A + 1) - (A - 1) * cosw0 - 2 * sqrt(A) * alpha);
+        double a0 = (A + 1) + (A - 1) * cosw0 + 2 * sqrt(A) * alpha;
+        double a1 = -2 * ((A - 1) + (A + 1) * cosw0);
+        double a2 = (A + 1) + (A - 1) * cosw0 - 2 * sqrt(A) * alpha;
+        coeffs_L[0] = a0;
+        coeffs_L[1] = a1;
+        coeffs_L[2] = a2;
+        coeffs_L[3] = b0;
+        coeffs_L[4] = b1;
+        coeffs_L[5] = b2;
+    }
+
+    // Low Mid Frequency
     w0 = 2 * pi * frequencyLM / lastSampleRate;
     G = pow(10, gainLM / 20);
     q = 1 / (2 * sqrt(G) * qfactorLM);
@@ -266,6 +302,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_LM[1] = 0.5 * (sqrt(B0) - sqrt(B1));
     coeffs_LM[2] = -1 * B2 / (4 * coeffs_LM[0]);
 
+    // High Mid Frequency
     w0 = 2 * pi * frequencyHM / lastSampleRate;
     G = pow(10, gainHM / 20);
     q = 1 / (2 * sqrt(G) * qfactorHM);
@@ -295,6 +332,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_HM[1] = 0.5 * (sqrt(B0) - sqrt(B1));
     coeffs_HM[2] = -1 * B2 / (4 * coeffs_HM[0]);
 
+    // High Frequency
     bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
     if (peakButtonStateH == true)
     {
@@ -387,15 +425,6 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
         coeffs_H[4] = b1;
         coeffs_H[5] = b2;
     }
-
-    // cast coefficients to float
-    /*for (auto i = 0; i < 6; i++)
-    {
-        coeffs_L[i] = static_cast<float>(coeffs_L[i]);
-        coeffs_LM[i] = static_cast<float>(coeffs_LM[i]);
-        coeffs_HM[i] = static_cast<float>(coeffs_HM[i]);
-        coeffs_H[i] = static_cast<float>(coeffs_H[i]);
-    }*/
     // update filters
     updateFilter();
     // clear buffers
@@ -410,33 +439,16 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
         }
     }
     // apply filter
-    bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
-    if (peakButtonStateL == true)
-    {
-        peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    }
-    else
-    {
-        lowShelf.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    }
-    /*bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
-    if (peakButtonStateH == true)
-    {
-        peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    }
-    else
-    {
-        highShelf.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    }*/
-    peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
 
     // apply input gain
     float inputGainValue = *apvts.getRawParameterValue("INPUT");
     inputGainSmooth.setTargetValue(inputGainValue);
     inputGain = inputGainSmooth.getNextValue();
-    inputGain = pow(10, inputGain / 20);
+    inputGain = static_cast<float>(pow(10, inputGain / 20));
     gainModule.setGainLinear(inputGain);
     gainModule.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
 

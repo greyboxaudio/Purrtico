@@ -82,8 +82,6 @@ private:
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerLM;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerHM;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerH;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> lowShelf;
-    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> highShelf;
 
     float inputGain{};
     float frequencyL{};

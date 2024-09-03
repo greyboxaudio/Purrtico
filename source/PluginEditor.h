@@ -57,6 +57,7 @@ private:
     juce::Label gainLabelH;
     juce::Label frequencyLabelH;
     juce::Label qfactorLabelH;
+    juce::Label versionLabel;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachmentL;

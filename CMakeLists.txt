@@ -16,7 +16,7 @@ set(HARDENED_RUNTIME_ENABLED)
 # The top-level CMakeLists.txt file for a project must contain a literal, direct call to the
 # `project()` command. `project()` sets up some helpful variables that describe source/binary
 # directories, and the current project version. This is a standard CMake command.
-project(PURRTICO VERSION 0.1.1)
+project(PURRTICO VERSION 0.2.0)
 
 # If you've installed JUCE somehow (via a package manager, or directly using the CMake install
 # target), you'll need to tell this project that it depends on the installed copy of JUCE. If you've
@@ -89,7 +89,8 @@ target_compile_definitions(PURRTICO
         JUCE_WEB_BROWSER=0  # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
         JUCE_USE_CURL=0     # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
         JUCE_VST3_CAN_REPLACE_VST2=0
-        JUCE_DISPLAY_SPLASH_SCREEN=0)
+        #JUCE_DISPLAY_SPLASH_SCREEN=0
+        CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # If your target needs extra binary assets, you can add them here. The first argument is the name of
 # a new static library target that will include all the binary resources. There is an optional
