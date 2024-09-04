@@ -234,11 +234,11 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // Low Frequency
     bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
     double A = pow(10, (-1 * gainL) / 40);
-    w0 = 2 * pi * (frequencyL / lastSampleRate);
-    double sinw0 = sin(w0);
-    double cosw0 = cos(w0);
     if (peakButtonStateL == true)
     {
+        w0 = 2 * pi * (frequencyL / lastSampleRate);
+        double sinw0 = sin(w0);
+        double cosw0 = cos(w0);
         double Q = qfactorL;
         double alpha = sinw0 / (2 * Q);
         double b0 = 1 + alpha * A;
@@ -256,6 +256,9 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     }
     else
     {
+        w0 = 2 * pi * ((2 * frequencyL) / lastSampleRate);
+        double sinw0 = sin(w0);
+        double cosw0 = cos(w0);
         double Q = 0.707;
         double alpha = sinw0 / (2 * Q);
         double b0 = A * ((A + 1) - (A - 1) * cosw0 + 2 * sqrt(A) * alpha);

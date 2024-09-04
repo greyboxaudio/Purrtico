@@ -143,7 +143,7 @@ PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcesso
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(640, 480);
+    setSize(800, 600);
 }
 
 PurrticoAudioProcessorEditor::~PurrticoAudioProcessorEditor()
@@ -157,8 +157,8 @@ void PurrticoAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
     g.setColour(juce::Colours::white);
-    g.setFont(15.0f);
-    g.drawFittedText ("v0.2.0", getLocalBounds(), juce::Justification::bottomRight, 1);
+    g.setFont(16.0f);
+    g.drawFittedText ("v0.2.1 " __DATE__ " " __TIME__, getLocalBounds(), juce::Justification::bottomRight, 1);
 }
 
 void PurrticoAudioProcessorEditor::resized()

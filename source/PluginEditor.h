@@ -44,6 +44,7 @@ private:
     juce::ToggleButton peakButtonL;
     juce::ToggleButton peakButtonH;
 
+    juce::Label versionLabel;
     juce::Label inputGainLabel;
     juce::Label gainLabelL;
     juce::Label frequencyLabelL;
@@ -57,7 +58,6 @@ private:
     juce::Label gainLabelH;
     juce::Label frequencyLabelH;
     juce::Label qfactorLabelH;
-    juce::Label versionLabel;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachmentL;
