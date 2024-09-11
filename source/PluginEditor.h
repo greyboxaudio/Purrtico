@@ -27,6 +27,7 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
+    juce::Slider debugSlider;
     juce::Slider inputGainSlider;
     
     juce::Slider gainSliderL;
@@ -59,6 +60,7 @@ private:
     juce::Label frequencyLabelH;
     juce::Label qfactorLabelH;
 
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> debugSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachmentL;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> frequencySliderAttachmentL;

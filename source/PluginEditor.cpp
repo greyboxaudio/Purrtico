@@ -13,6 +13,11 @@
 PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    debugSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    debugSlider.setTextBoxIsEditable(false);
+    addAndMakeVisible(debugSlider);
+    debugSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DEBUG", debugSlider);
+    
     inputGainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
     inputGainSlider.setTextBoxIsEditable(false);
     addAndMakeVisible(inputGainSlider);
@@ -182,4 +187,5 @@ void PurrticoAudioProcessorEditor::resized()
     gainSliderLM.setBounds(375, 275, 50, 200);
     frequencySliderLM.setBounds(450, 275, 50, 200);
     qfactorSliderLM.setBounds(525, 275, 50, 200);
+    debugSlider.setBounds(600, 275, 50, 200);
 }
