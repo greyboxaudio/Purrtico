@@ -80,6 +80,7 @@ private:
     juce::dsp::Gain<double> gainModule;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerL;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerLM;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerM;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerHM;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerH;
 
@@ -112,8 +113,15 @@ private:
     double B2 {};
     double B1 {};
     double W {};
+    double a0 {};
+    double a1 {};
+    double a2 {};
+    double b0 {};
+    double b1 {};
+    double b2 {};
     double coeffs_L[6]{};
     double coeffs_LM[6]{};
+    double coeffs_M[6]{};
     double coeffs_HM[6]{};
     double coeffs_H[6]{};
     //==============================================================================

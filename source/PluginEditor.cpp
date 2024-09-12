@@ -175,17 +175,19 @@ void PurrticoAudioProcessorEditor::resized()
     inputGainSlider.setBounds(25, 150, 50, 200);
     peakButtonH.setBounds(25,50,100,50);
     peakButtonL.setBounds(25,375,100,50);
-    gainSliderH.setBounds(125, 25, 50, 200);
-    frequencySliderH.setBounds(200, 25, 50, 200);
-    qfactorSliderH.setBounds(275, 25, 50, 200);
-    gainSliderHM.setBounds(375, 25, 50, 200);
-    frequencySliderHM.setBounds(450, 25, 50, 200);
-    qfactorSliderHM.setBounds(525, 25, 50, 200);
-    gainSliderL.setBounds(125, 275, 50, 200);
-    frequencySliderL.setBounds(200, 275, 50, 200);
-    qfactorSliderL.setBounds(275, 275, 50, 200);
-    gainSliderLM.setBounds(375, 275, 50, 200);
-    frequencySliderLM.setBounds(450, 275, 50, 200);
-    qfactorSliderLM.setBounds(525, 275, 50, 200);
-    debugSlider.setBounds(600, 275, 50, 200);
+    //top row
+    frequencySliderL.setBounds(125, 25, 50, 200);
+    gainSliderL.setBounds(200, 25, 50, 200);
+    qfactorSliderH.setBounds(300, 25, 50, 200);
+    debugSlider.setBounds(375, 25, 50, 200);
+    qfactorSliderL.setBounds(450, 25, 50, 200);
+    gainSliderH.setBounds(550, 25, 50, 200);
+    frequencySliderH.setBounds(625, 25, 50, 200);
+    //bottom row
+    qfactorSliderLM.setBounds(175, 275, 50, 200);
+    gainSliderLM.setBounds(250, 275, 50, 200);
+    frequencySliderLM.setBounds(325, 275, 50, 200);
+    qfactorSliderHM.setBounds(425, 275, 50, 200);
+    gainSliderHM.setBounds(500, 275, 50, 200);
+    frequencySliderHM.setBounds(575, 275, 50, 200);
 }

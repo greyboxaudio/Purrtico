@@ -121,6 +121,8 @@ void PurrticoAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     peakingEqualizerL.reset();
     peakingEqualizerLM.prepare(spec);
     peakingEqualizerLM.reset();
+    peakingEqualizerM.prepare(spec);
+    peakingEqualizerM.reset();
     peakingEqualizerHM.prepare(spec);
     peakingEqualizerHM.reset();
     peakingEqualizerH.prepare(spec);
@@ -162,6 +164,8 @@ void PurrticoAudioProcessor::updateFilter()
 {
     *peakingEqualizerL.state = juce::dsp::IIR::Coefficients<double>(coeffs_L[0], coeffs_L[1], coeffs_L[2], coeffs_L[3], coeffs_L[4], coeffs_L[5]);
     *peakingEqualizerLM.state = juce::dsp::IIR::Coefficients<double>(coeffs_LM[0], coeffs_LM[1], coeffs_LM[2], coeffs_LM[3], coeffs_LM[4], coeffs_LM[5]);
+    *peakingEqualizerM.state = juce::dsp::IIR::Coefficients<double>(coeffs_M[0], coeffs_M[1], coeffs_M[2], coeffs_M[3], coeffs_M[4], coeffs_M[5]);
+
     *peakingEqualizerHM.state = juce::dsp::IIR::Coefficients<double>(coeffs_HM[0], coeffs_HM[1], coeffs_HM[2], coeffs_HM[3], coeffs_HM[4], coeffs_HM[5]);
     *peakingEqualizerH.state = juce::dsp::IIR::Coefficients<double>(coeffs_H[0], coeffs_H[1], coeffs_H[2], coeffs_H[3], coeffs_H[4], coeffs_H[5]);
 }
@@ -234,53 +238,35 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
 
     // Low Frequency
     bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
-    double A = pow(10, (-1 * gainL) / 40);
+
     if (peakButtonStateL == true)
     {
-        w0 = 2 * pi * ((frequencyL * debugValue) / lastSampleRate);
-        double sinw0 = sin(w0);
-        double cosw0 = cos(w0);
-        double Q = qfactorL;
-        double alpha = sinw0 / (2 * Q);
-        double b0 = 1 + alpha * A;
-        double b1 = -2 * cosw0;
-        double b2 = 1 - alpha * A;
-        double a0 = 1 + alpha / A;
-        double a1 = -2 * cosw0;
-        double a2 = 1 - alpha / A;
-        coeffs_L[0] = a0;
-        coeffs_L[1] = a1;
-        coeffs_L[2] = a2;
-        coeffs_L[3] = b0;
-        coeffs_L[4] = b1;
-        coeffs_L[5] = b2;
+        gainL = 0;
     }
-    else
-    {
-        w0 = 2 * pi * ((frequencyL * 2) / lastSampleRate);
-        double sinw0 = sin(w0);
-        double cosw0 = cos(w0);
-        G = pow(10, gainL / 20);
-        double Q = debugValue;
-        double alpha = sinw0 / (2 * Q);
-        double b0 = A * ((A + 1) - (A - 1) * cosw0 + 2 * sqrt(A) * alpha);
-        double b1 = 2 * A * ((A - 1) - (A + 1) * cosw0);
-        double b2 = A * ((A + 1) - (A - 1) * cosw0 - 2 * sqrt(A) * alpha);
-        double a0 = (A + 1) + (A - 1) * cosw0 + 2 * sqrt(A) * alpha;
-        double a1 = -2 * ((A - 1) + (A + 1) * cosw0);
-        double a2 = (A + 1) + (A - 1) * cosw0 - 2 * sqrt(A) * alpha;
-        coeffs_L[0] = a0;
-        coeffs_L[1] = a1;
-        coeffs_L[2] = a2;
-        coeffs_L[3] = b0;
-        coeffs_L[4] = b1;
-        coeffs_L[5] = b2;
-    }
+    double A = pow(10, (-1 * gainL) / 40);
+    w0 = 2 * pi * ((frequencyL * 2) / lastSampleRate);
+    double sinw0 = sin(w0);
+    double cosw0 = cos(w0);
+    G = pow(10, gainL / 20);
+    double Q = 0.707;
+    double alpha = sinw0 / (2 * Q);
+    b0 = A * ((A + 1) - (A - 1) * cosw0 + 2 * sqrt(A) * alpha);
+    b1 = 2 * A * ((A - 1) - (A + 1) * cosw0);
+    b2 = A * ((A + 1) - (A - 1) * cosw0 - 2 * sqrt(A) * alpha);
+    a0 = (A + 1) + (A - 1) * cosw0 + 2 * sqrt(A) * alpha;
+    a1 = -2 * ((A - 1) + (A + 1) * cosw0);
+    a2 = (A + 1) + (A - 1) * cosw0 - 2 * sqrt(A) * alpha;
+    coeffs_L[0] = a0;
+    coeffs_L[1] = a1;
+    coeffs_L[2] = a2;
+    coeffs_L[3] = b0;
+    coeffs_L[4] = b1;
+    coeffs_L[5] = b2;
 
     // Low Mid Frequency
     w0 = 2 * pi * frequencyLM / lastSampleRate;
     G = pow(10, gainLM / 20);
-    q = 1 / (2 * sqrt(G) * qfactorLM);
+    q = 1 / (2 * sqrt(G) * qfactorLM * 0.41);
     coeffs_LM[3] = 1.0f;
     if (q <= 1.0f)
     {
@@ -307,10 +293,45 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_LM[1] = 0.5 * (sqrt(B0) - sqrt(B1));
     coeffs_LM[2] = -1 * B2 / (4 * coeffs_LM[0]);
 
+    // Mid Frequency
+    /*
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DEBUG", "debug", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_L", "QFactor L", 100.0f, 2000.0f, 1000.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_H", "QFactor H", 0.7f, 5.0f, 2.0f));
+    */
+    w0 = 2 * pi * qfactorL / lastSampleRate;
+    G = pow(10, debugValue / 20);
+    q = 1 / (2 * sqrt(G) * qfactorH * 0.41);
+    coeffs_M[3] = 1.0f;
+    if (q <= 1.0f)
+    {
+        coeffs_M[4] = -2 * pow(e, -1 * q * w0) * cos(sqrt(1 - pow(q, 2)) * w0);
+    }
+    else
+    {
+        coeffs_M[4] = -2 * pow(e, -1 * q * w0) * cosh(sqrt(pow(q, 2) - 1) * w0);
+    }
+    coeffs_M[5] = pow(e, -2 * q * w0);
+    p0 = 1 - pow(sin(w0 / 2), 2);
+    p1 = pow(sin(w0 / 2), 2);
+    p2 = 4 * p0 * p1;
+    A0 = pow(1 + coeffs_M[4] + coeffs_M[5], 2);
+    A1 = pow(1 - coeffs_M[4] + coeffs_M[5], 2);
+    A2 = -4 * coeffs_M[5];
+    R1 = (A0 * p0 + A1 * p1 + A2 * p2) * pow(G, 2);
+    R2 = (-1 * A0 + A1 + 4 * (p0 - p1) * A2) * pow(G, 2);
+    B0 = A0;
+    B2 = (R1 - R2 * p1 - B0) / (4 * pow(p1, 2));
+    B1 = R2 + B0 + 4 * (p1 - p0) * B2;
+    W = 0.5 * (sqrt(B0) + sqrt(B1));
+    coeffs_M[0] = 0.5 * (W + sqrt(pow(W, 2) + B2));
+    coeffs_M[1] = 0.5 * (sqrt(B0) - sqrt(B1));
+    coeffs_M[2] = -1 * B2 / (4 * coeffs_M[0]);
+
     // High Mid Frequency
     w0 = 2 * pi * frequencyHM / lastSampleRate;
     G = pow(10, gainHM / 20);
-    q = 1 / (2 * sqrt(G) * (qfactorHM*0.41));
+    q = 1 / (2 * sqrt(G) * qfactorHM * 0.41);
     coeffs_HM[3] = 1.0f;
     if (q <= 1.0f)
     {
@@ -339,97 +360,69 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
 
     // High Frequency
     bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
+    double fc = frequencyH / lastSampleRate;
     if (peakButtonStateH == true)
     {
-        w0 = 2 * pi * (frequencyH) / lastSampleRate;
-        G = pow(10, gainH / 20);
-        q = 1 / (2 * sqrt(G) * qfactorH);
-        coeffs_H[3] = 1.0f;
-        if (q <= 1.0f)
-        {
-            coeffs_H[4] = -2 * pow(e, -1 * q * w0) * cos(sqrt(1 - pow(q, 2)) * w0);
-        }
-        else
-        {
-            coeffs_H[4] = -2 * pow(e, -1 * q * w0) * cosh(sqrt(pow(q, 2) - 1) * w0);
-        }
-        coeffs_H[5] = pow(e, -2 * q * w0);
-        p0 = 1 - pow(sin(w0 / 2), 2);
-        p1 = pow(sin(w0 / 2), 2);
-        p2 = 4 * p0 * p1;
-        A0 = pow(1 + coeffs_H[4] + coeffs_H[5], 2);
-        A1 = pow(1 - coeffs_H[4] + coeffs_H[5], 2);
-        A2 = -4 * coeffs_H[5];
-        R1 = (A0 * p0 + A1 * p1 + A2 * p2) * pow(G, 2);
-        R2 = (-1 * A0 + A1 + 4 * (p0 - p1) * A2) * pow(G, 2);
-        B0 = A0;
-        B2 = (R1 - R2 * p1 - B0) / (4 * pow(p1, 2));
-        B1 = R2 + B0 + 4 * (p1 - p0) * B2;
-        W = 0.5 * (sqrt(B0) + sqrt(B1));
-        coeffs_H[0] = 0.5 * (W + sqrt(pow(W, 2) + B2));
-        coeffs_H[1] = 0.5 * (sqrt(B0) - sqrt(B1));
-        coeffs_H[2] = -1 * B2 / (4 * coeffs_H[0]);
+        gainH = 0;
+    }
+    double gain = (pow(10, (-1 * gainH) / 20));
+
+    double g;
+    if (abs(1 - gain) < 1e-6)
+    {
+        g = 1.00001;
     }
     else
     {
-        double fc = (frequencyH * qfactorH) / lastSampleRate;
-        double gain = (pow(10, (-1 * gainH) / 20));
-        double g;
-        if (abs(1 - gain) < 1e-6)
-        {
-            g = 1.00001;
-        }
-        else
-        {
-            g = gain;
-        }
-        // abbreviations
-        double pihalf = pi * 0.5;
-        double invg = 1.0 / g;
-        // matching gain at Nyquist
-        double fc4 = pow(fc, 4);
-        double hny = (fc4 + g) / (fc4 + invg);
-        // matching gain at f_1
-        double f1 = fc / sqrt(0.160 + 1.543 * fc * fc);
-        double f14 = pow(f1, 4);
-        double h1 = (fc4 + f14 * g) / (fc4 + f14 * invg);
-        double phi1 = pow(sin(pihalf * f1), 2);
-        // matching gain at f_2
-        double f2 = fc / sqrt(0.947 + 3.806 * fc * fc);
-        double f24 = pow(f2, 4);
-        double h2 = (fc4 + f24 * g) / (fc4 + f24 * invg);
-        double phi2 = pow(sin(pihalf * f2), 2);
-        // linear equations coefficients
-        double d1 = (h1 - 1.0) * (1.0 - phi1);
-        double c11 = -phi1 * d1;
-        double c12 = phi1 * phi1 * (hny - h1);
-        double d2 = (h2 - 1.0) * (1.0 - phi2);
-        double c21 = -phi2 * d2;
-        double c22 = phi2 * phi2 * (hny - h2);
-        // linear equations solution
-        double alfa1 = (c22 * d1 - c12 * d2) / (c11 * c22 - c12 * c21);
-        double aa1 = (d1 - c11 * alfa1) / c12;
-        double bb1 = hny * aa1;
-        // compute A_2 and B_2
-        double aa2 = 0.25 * (alfa1 - aa1);
-        double bb2 = 0.25 * (alfa1 - bb1);
-        // compute biquad coefficients scaled with 1/a_0
-        double v = 0.5 * (1.0 + sqrt(aa1));
-        double w = 0.5 * (1.0 + sqrt(bb1));
-        double a0 = 0.5 * (v + sqrt(v * v + aa2));
-        double inva0 = 1.0 / a0;
-        double a1 = (1.0 - v) * inva0;
-        double a2 = -0.25 * aa2 * inva0 * inva0;
-        double b0 = (0.5 * (w + sqrt(w * w + bb2))) * inva0;
-        double b1 = (1.0 - w) * inva0;
-        double b2 = (-0.25 * bb2 / b0) * inva0 * inva0;
-        coeffs_H[0] = 1.0;
-        coeffs_H[1] = a1;
-        coeffs_H[2] = a2;
-        coeffs_H[3] = b0;
-        coeffs_H[4] = b1;
-        coeffs_H[5] = b2;
+        g = gain;
     }
+
+    // abbreviations
+    double pihalf = pi * 0.5;
+    double invg = 1.0 / g;
+    // matching gain at Nyquist
+    double fc4 = pow(fc, 4);
+    double hny = (fc4 + g) / (fc4 + invg);
+    // matching gain at f_1
+    double f1 = fc / sqrt(0.160 + 1.543 * fc * fc);
+    double f14 = pow(f1, 4);
+    double h1 = (fc4 + f14 * g) / (fc4 + f14 * invg);
+    double phi1 = pow(sin(pihalf * f1), 2);
+    // matching gain at f_2
+    double f2 = fc / sqrt(0.947 + 3.806 * fc * fc);
+    double f24 = pow(f2, 4);
+    double h2 = (fc4 + f24 * g) / (fc4 + f24 * invg);
+    double phi2 = pow(sin(pihalf * f2), 2);
+    // linear equations coefficients
+    double d1 = (h1 - 1.0) * (1.0 - phi1);
+    double c11 = -phi1 * d1;
+    double c12 = phi1 * phi1 * (hny - h1);
+    double d2 = (h2 - 1.0) * (1.0 - phi2);
+    double c21 = -phi2 * d2;
+    double c22 = phi2 * phi2 * (hny - h2);
+    // linear equations solution
+    double alfa1 = (c22 * d1 - c12 * d2) / (c11 * c22 - c12 * c21);
+    double aa1 = (d1 - c11 * alfa1) / c12;
+    double bb1 = hny * aa1;
+    // compute A_2 and B_2
+    double aa2 = 0.25 * (alfa1 - aa1);
+    double bb2 = 0.25 * (alfa1 - bb1);
+    // compute biquad coefficients scaled with 1/a_0
+    double v = 0.5 * (1.0 + sqrt(aa1));
+    double w = 0.5 * (1.0 + sqrt(bb1));
+    a0 = 0.5 * (v + sqrt(v * v + aa2));
+    double inva0 = 1.0 / a0;
+    a1 = (1.0 - v) * inva0;
+    a2 = -0.25 * aa2 * inva0 * inva0;
+    b0 = (0.5 * (w + sqrt(w * w + bb2))) * inva0;
+    b1 = (1.0 - w) * inva0;
+    b2 = (-0.25 * bb2 / b0) * inva0 * inva0;
+    coeffs_H[0] = 1.0;
+    coeffs_H[1] = a1;
+    coeffs_H[2] = a2;
+    coeffs_H[3] = b0;
+    coeffs_H[4] = b1;
+    coeffs_H[5] = b2;
     // update filters
     updateFilter();
     // clear buffers
@@ -446,6 +439,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // apply filter
     peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    peakingEqualizerM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
 
@@ -511,21 +505,24 @@ juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 juce::AudioProcessorValueTreeState::ParameterLayout PurrticoAudioProcessor::createParameters()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> parameters;
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DEBUG", "debug", 0.1f, 2.9f, 1.0f));
+
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("INPUT", "inputGain", -18.0f, 18.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterBool>("PEAK_L", "Peak_L", false));
     parameters.push_back(std::make_unique<juce::AudioParameterBool>("PEAK_H", "Peak_H", false));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_L", "Gain L", -20.0f, 20.0f, 0.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_L", "Frequency L", 33.0f, 450.0f, 200.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_LM", "Frequency LM", 33.0f, 1500.0f, 350.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_HM", "Frequency HM", 50.0f, 16000.0f, 6000.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_H", "Frequency H", 2000.0f, 30000.0f, 4500.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_L", "QFactor L", 0.22f, 1.2f, 0.7f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_LM", "Gain LM", -18.5f, 18.5f, 0.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_LM", "QFactor LM", 0.2f, 1.9f, 1.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_L", "Gain L", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_L", "Frequency L", 30.0f, 300.0f, 80.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_LM", "Frequency LM", 50.0f, 400.0f, 175.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_HM", "Frequency HM", 1800.0f, 16000.0f, 6000.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_H", "Frequency H", 2500.0f, 25000.0f, 12000.0f));
+
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_LM", "Gain LM", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_LM", "QFactor LM", 0.7f, 5.0f, 2.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_HM", "Gain HM", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_HM", "QFactor HM", 0.7f, 5.0f, 2.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_H", "Gain H", -18.5f, 18.5f, 0.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_H", "QFactor H", 0.2f, 2.2f, 1.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_H", "Gain H", -12.0f, 12.0f, 0.0f));
+
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DEBUG", "debug", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_L", "QFactor L", 330.0f, 2500.0f, 850.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_H", "QFactor H", 0.7f, 5.0f, 2.0f));
     return {parameters.begin(), parameters.end()};
 }
