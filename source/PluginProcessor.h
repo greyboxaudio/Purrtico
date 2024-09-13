@@ -124,7 +124,6 @@ private:
     double b0 {};
     double b1 {};
     double b2 {};
-    double coeffs_HPF[6]{};
     double coeffs_L[6]{};
     double coeffs_LM[6]{};
     double coeffs_M[6]{};

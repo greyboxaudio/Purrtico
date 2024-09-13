@@ -164,7 +164,7 @@ bool PurrticoAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void PurrticoAudioProcessor::updateFilter()
 {
-    *highPassFilter.state = juce::dsp::IIR::Coefficients<double>(coeffs_HPF[0], coeffs_HPF[1], coeffs_HPF[2], coeffs_HPF[3], coeffs_HPF[4], coeffs_HPF[5]);
+    *highPassFilter.state = *juce::dsp::IIR::Coefficients<double>::makeHighPass(lastSampleRate, 21, 0.78);
     *peakingEqualizerL.state = juce::dsp::IIR::Coefficients<double>(coeffs_L[0], coeffs_L[1], coeffs_L[2], coeffs_L[3], coeffs_L[4], coeffs_L[5]);
     *peakingEqualizerLM.state = juce::dsp::IIR::Coefficients<double>(coeffs_LM[0], coeffs_LM[1], coeffs_LM[2], coeffs_LM[3], coeffs_LM[4], coeffs_LM[5]);
     *peakingEqualizerM.state = juce::dsp::IIR::Coefficients<double>(coeffs_M[0], coeffs_M[1], coeffs_M[2], coeffs_M[3], coeffs_M[4], coeffs_M[5]);
@@ -237,26 +237,6 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // calculate filter coefficients
     double pi = juce::MathConstants<double>::pi;
     double e = juce::MathConstants<double>::euler;
-
-    //High Pass Filter
-    double frequency = 50.0;
-    q = 0.8;
-    w0 = 2 * pi * (frequency / lastSampleRate);
-    sinw0 = sin(w0);
-    cosw0 = cos(w0);
-    alpha = sinw0 / (2 * q);
-    a0 = 1 + alpha;
-    a1 = -2 * cosw0;
-    a2 = 1 - alpha;
-    b0 = (1 + cosw0) / 2;
-    b1 = -1 * (1 + cosw0);
-    b2 = (1 + cosw0) / 2;
-    coeffs_HPF[0] = a0;
-    coeffs_HPF[1] = a1;
-    coeffs_HPF[2] = a2;
-    coeffs_HPF[3] = b0;
-    coeffs_HPF[4] = b1;
-    coeffs_HPF[5] = b2;
 
     // Low Frequency
     A = pow(10, (-1 * gainL) / 40);
@@ -454,7 +434,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     bool inButtonStateLM = *apvts.getRawParameterValue("IN_LM");
     bool inButtonStateM = *apvts.getRawParameterValue("IN_M");
     bool inButtonStateHM = *apvts.getRawParameterValue("IN_HM");
-    //highPassFilter.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    highPassFilter.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     if (peakButtonStateL == false)
     {
         if (peakButtonStateH == true)
