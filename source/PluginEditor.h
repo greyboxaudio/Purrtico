@@ -44,12 +44,14 @@ private:
     juce::Slider qfactorSliderH;
     juce::ToggleButton peakButtonL;
     juce::ToggleButton peakButtonH;
+    juce::ToggleButton inButtonLM;
+    juce::ToggleButton inButtonM;
+    juce::ToggleButton inButtonHM;
 
     juce::Label versionLabel;
     juce::Label inputGainLabel;
     juce::Label gainLabelL;
     juce::Label frequencyLabelL;
-    juce::Label qfactorLabelL;
     juce::Label gainLabelLM;
     juce::Label frequencyLabelLM;
     juce::Label qfactorLabelLM;
@@ -58,7 +60,10 @@ private:
     juce::Label qfactorLabelHM;
     juce::Label gainLabelH;
     juce::Label frequencyLabelH;
+
     juce::Label qfactorLabelH;
+    juce::Label qfactorLabelL;
+    juce::Label gainLabelM;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> debugSliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainSliderAttachment;
@@ -76,6 +81,9 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> qfactorSliderAttachmentH;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> peakButtonAttachmentL;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> peakButtonAttachmentH;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> inButtonAttachmentLM;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> inButtonAttachmentM;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> inButtonAttachmentHM;
     PurrticoAudioProcessor& audioProcessor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PurrticoAudioProcessorEditor)

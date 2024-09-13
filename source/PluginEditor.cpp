@@ -17,7 +17,11 @@ PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcesso
     debugSlider.setTextBoxIsEditable(false);
     addAndMakeVisible(debugSlider);
     debugSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DEBUG", debugSlider);
-    
+    addAndMakeVisible(gainLabelM);
+    gainLabelM.setText("GM", juce::dontSendNotification);
+    gainLabelM.attachToComponent(&debugSlider, false);
+    gainLabelM.setJustificationType(juce::Justification::centred);
+
     inputGainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
     inputGainSlider.setTextBoxIsEditable(false);
     addAndMakeVisible(inputGainSlider);
@@ -99,15 +103,6 @@ PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcesso
     frequencyLabelH.attachToComponent(&frequencySliderH, false);
     frequencyLabelH.setJustificationType(juce::Justification::centred);
 
-    qfactorSliderL.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-    qfactorSliderL.setTextBoxIsEditable(false);
-    addAndMakeVisible(qfactorSliderL);
-    qfactorSliderAttachmentL = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "QFACTOR_L", qfactorSliderL);
-    addAndMakeVisible(qfactorLabelL);
-    qfactorLabelL.setText("QL", juce::dontSendNotification);
-    qfactorLabelL.attachToComponent(&qfactorSliderL, false);
-    qfactorLabelL.setJustificationType(juce::Justification::centred);
-
     qfactorSliderLM.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
     qfactorSliderLM.setTextBoxIsEditable(false);
     addAndMakeVisible(qfactorSliderLM);
@@ -131,17 +126,37 @@ PurrticoAudioProcessorEditor::PurrticoAudioProcessorEditor(PurrticoAudioProcesso
     addAndMakeVisible(qfactorSliderH);
     qfactorSliderAttachmentH = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "QFACTOR_H", qfactorSliderH);
     addAndMakeVisible(qfactorLabelH);
-    qfactorLabelH.setText("QH", juce::dontSendNotification);
+    qfactorLabelH.setText("QM", juce::dontSendNotification);
     qfactorLabelH.attachToComponent(&qfactorSliderH, false);
     qfactorLabelH.setJustificationType(juce::Justification::centred);
 
-    peakButtonL.setButtonText("PeakL");
+    qfactorSliderL.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
+    qfactorSliderL.setTextBoxIsEditable(false);
+    addAndMakeVisible(qfactorSliderL);
+    qfactorSliderAttachmentL = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "QFACTOR_L", qfactorSliderL);
+    addAndMakeVisible(qfactorLabelL);
+    qfactorLabelL.setText("FM", juce::dontSendNotification);
+    qfactorLabelL.attachToComponent(&qfactorSliderL, false);
+    qfactorLabelL.setJustificationType(juce::Justification::centred);
+
+    peakButtonL.setButtonText("ALL BYPASS");
     addAndMakeVisible(peakButtonL);
     peakButtonAttachmentL = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "PEAK_L", peakButtonL);
-    peakButtonH.setButtonText("PeakH");
+    peakButtonH.setButtonText("LF/HF IN");
     addAndMakeVisible(peakButtonH);
     peakButtonAttachmentH = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "PEAK_H", peakButtonH);
 
+    inButtonLM.setButtonText("LMF IN");
+    addAndMakeVisible(inButtonLM);
+    inButtonAttachmentLM = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "IN_LM", inButtonLM);
+
+    inButtonM.setButtonText("MF IN");
+    addAndMakeVisible(inButtonM);
+    inButtonAttachmentM = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "IN_M", inButtonM);
+
+    inButtonHM.setButtonText("HMF IN");
+    addAndMakeVisible(inButtonHM);
+    inButtonAttachmentHM = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "IN_HM", inButtonHM);
     /*addAndMakeVisible(versionLabel);
     versionLabel.setText(__DATE__ " " __TIME__ " " CMAKE_BUILD_TYPE, juce::dontSendNotification);
     versionLabel.setJustificationType(juce::Justification::centred);*/
@@ -173,8 +188,11 @@ void PurrticoAudioProcessorEditor::resized()
     juce::Rectangle<int> bounds = getLocalBounds();
     //versionLabel.setBounds(10,  10, getWidth() - 20,  30);
     inputGainSlider.setBounds(25, 150, 50, 200);
-    peakButtonH.setBounds(25,50,100,50);
-    peakButtonL.setBounds(25,375,100,50);
+    peakButtonH.setBounds(25,375,100,50);
+    peakButtonL.setBounds(25,50,100,50);
+    inButtonLM.setBounds(25,425,100,50);
+    inButtonM.setBounds(25,475,100,50);
+    inButtonHM.setBounds(25,525,100,50);
     //top row
     frequencySliderL.setBounds(125, 25, 50, 200);
     gainSliderL.setBounds(200, 25, 50, 200);

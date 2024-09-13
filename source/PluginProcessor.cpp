@@ -237,12 +237,6 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     double e = juce::MathConstants<double>::euler;
 
     // Low Frequency
-    bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
-
-    if (peakButtonStateL == true)
-    {
-        gainL = 0;
-    }
     double A = pow(10, (-1 * gainL) / 40);
     w0 = 2 * pi * ((frequencyL * 2) / lastSampleRate);
     double sinw0 = sin(w0);
@@ -264,9 +258,10 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_L[5] = b2;
 
     // Low Mid Frequency
+    double qModLM = 0.27 + ((qfactorLM-0.7)/0.43*0.215);
     w0 = 2 * pi * frequencyLM / lastSampleRate;
     G = pow(10, gainLM / 20);
-    q = 1 / (2 * sqrt(G) * qfactorLM * 0.41);
+    q = 1 / (2 * sqrt(G) * qModLM);
     coeffs_LM[3] = 1.0f;
     if (q <= 1.0f)
     {
@@ -299,9 +294,10 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_L", "QFactor L", 100.0f, 2000.0f, 1000.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_H", "QFactor H", 0.7f, 5.0f, 2.0f));
     */
+    double qModM = 0.265 + ((qfactorH-0.7)/0.43*0.21);
     w0 = 2 * pi * qfactorL / lastSampleRate;
     G = pow(10, debugValue / 20);
-    q = 1 / (2 * sqrt(G) * qfactorH * 0.41);
+    q = 1 / (2 * sqrt(G) * qModM);
     coeffs_M[3] = 1.0f;
     if (q <= 1.0f)
     {
@@ -329,9 +325,10 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_M[2] = -1 * B2 / (4 * coeffs_M[0]);
 
     // High Mid Frequency
+    double qModHM = 0.28 + ((qfactorHM-0.7)/0.43*0.175);
     w0 = 2 * pi * frequencyHM / lastSampleRate;
     G = pow(10, gainHM / 20);
-    q = 1 / (2 * sqrt(G) * qfactorHM * 0.41);
+    q = 1 / (2 * sqrt(G) * qModHM);
     coeffs_HM[3] = 1.0f;
     if (q <= 1.0f)
     {
@@ -359,14 +356,8 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     coeffs_HM[2] = -1 * B2 / (4 * coeffs_HM[0]);
 
     // High Frequency
-    bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
     double fc = frequencyH / lastSampleRate;
-    if (peakButtonStateH == true)
-    {
-        gainH = 0;
-    }
     double gain = (pow(10, (-1 * gainH) / 20));
-
     double g;
     if (abs(1 - gain) < 1e-6)
     {
@@ -376,7 +367,6 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     {
         g = gain;
     }
-
     // abbreviations
     double pihalf = pi * 0.5;
     double invg = 1.0 / g;
@@ -437,11 +427,31 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
         }
     }
     // apply filter
-    peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    peakingEqualizerM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
-    peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+    bool peakButtonStateL = *apvts.getRawParameterValue("PEAK_L");
+    bool peakButtonStateH = *apvts.getRawParameterValue("PEAK_H");
+    bool inButtonStateLM = *apvts.getRawParameterValue("IN_LM");
+    bool inButtonStateM = *apvts.getRawParameterValue("IN_M");
+    bool inButtonStateHM = *apvts.getRawParameterValue("IN_HM");
+    if (peakButtonStateL == false)
+    {
+        if (peakButtonStateH == true)
+        {
+            peakingEqualizerL.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+            peakingEqualizerH.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+        }
+        if (inButtonStateLM == true)
+        {
+            peakingEqualizerLM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+        }
+        if (inButtonStateM == true)
+        {
+            peakingEqualizerM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+        }
+        if (inButtonStateHM == true)
+        {
+            peakingEqualizerHM.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
+        }
+    }
 
     // apply input gain
     float inputGainValue = *apvts.getRawParameterValue("INPUT");
@@ -505,24 +515,24 @@ juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 juce::AudioProcessorValueTreeState::ParameterLayout PurrticoAudioProcessor::createParameters()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> parameters;
-
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("INPUT", "inputGain", -18.0f, 18.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("INPUT", "inputGain", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterBool>("PEAK_L", "Peak_L", false));
-    parameters.push_back(std::make_unique<juce::AudioParameterBool>("PEAK_H", "Peak_H", false));
+    parameters.push_back(std::make_unique<juce::AudioParameterBool>("PEAK_H", "Peak_H", true));
+    parameters.push_back(std::make_unique<juce::AudioParameterBool>("IN_LM", "In_LM", true));
+    parameters.push_back(std::make_unique<juce::AudioParameterBool>("IN_M", "In_M", true));
+    parameters.push_back(std::make_unique<juce::AudioParameterBool>("IN_HM", "In_HM", true));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_L", "Gain L", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_LM", "Gain LM", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DEBUG", "debug", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_HM", "Gain HM", -12.0f, 12.0f, 0.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_H", "Gain H", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_L", "Frequency L", 30.0f, 300.0f, 80.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_LM", "Frequency LM", 50.0f, 400.0f, 175.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_L", "QFactor L", 330.0f, 2500.0f, 850.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_HM", "Frequency HM", 1800.0f, 16000.0f, 6000.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FREQ_H", "Frequency H", 2500.0f, 25000.0f, 12000.0f));
-
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_LM", "Gain LM", -12.0f, 12.0f, 0.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_LM", "QFactor LM", 0.7f, 5.0f, 2.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_HM", "Gain HM", -12.0f, 12.0f, 0.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_HM", "QFactor HM", 0.7f, 5.0f, 2.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN_H", "Gain H", -12.0f, 12.0f, 0.0f));
-
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DEBUG", "debug", -12.0f, 12.0f, 0.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_L", "QFactor L", 330.0f, 2500.0f, 850.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_H", "QFactor H", 0.7f, 5.0f, 2.0f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("QFACTOR_HM", "QFactor HM", 0.7f, 5.0f, 2.0f));
     return {parameters.begin(), parameters.end()};
 }
