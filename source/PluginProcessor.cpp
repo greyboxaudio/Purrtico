@@ -117,6 +117,8 @@ void PurrticoAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     spec.numChannels = getTotalNumOutputChannels();
     gainModule.prepare(spec);
     gainModule.reset();
+    highPassFilter.prepare(spec);
+    highPassFilter.reset();
     peakingEqualizerL.prepare(spec);
     peakingEqualizerL.reset();
     peakingEqualizerLM.prepare(spec);
@@ -162,10 +164,10 @@ bool PurrticoAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void PurrticoAudioProcessor::updateFilter()
 {
+    *highPassFilter.state = juce::dsp::IIR::Coefficients<double>(coeffs_HPF[0], coeffs_HPF[1], coeffs_HPF[2], coeffs_HPF[3], coeffs_HPF[4], coeffs_HPF[5]);
     *peakingEqualizerL.state = juce::dsp::IIR::Coefficients<double>(coeffs_L[0], coeffs_L[1], coeffs_L[2], coeffs_L[3], coeffs_L[4], coeffs_L[5]);
     *peakingEqualizerLM.state = juce::dsp::IIR::Coefficients<double>(coeffs_LM[0], coeffs_LM[1], coeffs_LM[2], coeffs_LM[3], coeffs_LM[4], coeffs_LM[5]);
     *peakingEqualizerM.state = juce::dsp::IIR::Coefficients<double>(coeffs_M[0], coeffs_M[1], coeffs_M[2], coeffs_M[3], coeffs_M[4], coeffs_M[5]);
-
     *peakingEqualizerHM.state = juce::dsp::IIR::Coefficients<double>(coeffs_HM[0], coeffs_HM[1], coeffs_HM[2], coeffs_HM[3], coeffs_HM[4], coeffs_HM[5]);
     *peakingEqualizerH.state = juce::dsp::IIR::Coefficients<double>(coeffs_H[0], coeffs_H[1], coeffs_H[2], coeffs_H[3], coeffs_H[4], coeffs_H[5]);
 }
@@ -236,14 +238,34 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     double pi = juce::MathConstants<double>::pi;
     double e = juce::MathConstants<double>::euler;
 
+    //High Pass Filter
+    double frequency = 50.0;
+    q = 0.8;
+    w0 = 2 * pi * (frequency / lastSampleRate);
+    sinw0 = sin(w0);
+    cosw0 = cos(w0);
+    alpha = sinw0 / (2 * q);
+    a0 = 1 + alpha;
+    a1 = -2 * cosw0;
+    a2 = 1 - alpha;
+    b0 = (1 + cosw0) / 2;
+    b1 = -1 * (1 + cosw0);
+    b2 = (1 + cosw0) / 2;
+    coeffs_HPF[0] = a0;
+    coeffs_HPF[1] = a1;
+    coeffs_HPF[2] = a2;
+    coeffs_HPF[3] = b0;
+    coeffs_HPF[4] = b1;
+    coeffs_HPF[5] = b2;
+
     // Low Frequency
-    double A = pow(10, (-1 * gainL) / 40);
+    A = pow(10, (-1 * gainL) / 40);
     w0 = 2 * pi * ((frequencyL * 2) / lastSampleRate);
-    double sinw0 = sin(w0);
-    double cosw0 = cos(w0);
+    sinw0 = sin(w0);
+    cosw0 = cos(w0);
     G = pow(10, gainL / 20);
-    double Q = 0.707;
-    double alpha = sinw0 / (2 * Q);
+    q = 0.707;
+    alpha = sinw0 / (2 * q);
     b0 = A * ((A + 1) - (A - 1) * cosw0 + 2 * sqrt(A) * alpha);
     b1 = 2 * A * ((A - 1) - (A + 1) * cosw0);
     b2 = A * ((A + 1) - (A - 1) * cosw0 - 2 * sqrt(A) * alpha);
@@ -432,6 +454,7 @@ void PurrticoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     bool inButtonStateLM = *apvts.getRawParameterValue("IN_LM");
     bool inButtonStateM = *apvts.getRawParameterValue("IN_M");
     bool inButtonStateHM = *apvts.getRawParameterValue("IN_HM");
+    //highPassFilter.process(juce::dsp::ProcessContextReplacing<double>(inputBlock));
     if (peakButtonStateL == false)
     {
         if (peakButtonStateH == true)

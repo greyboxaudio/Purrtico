@@ -78,6 +78,7 @@ private:
     juce::LinearSmoothedValue<float> gainSmoothH{};
 
     juce::dsp::Gain<double> gainModule;
+    juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> highPassFilter;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerL;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerLM;
     juce::dsp::ProcessorDuplicator <juce::dsp::IIR::Filter <double>, juce::dsp::IIR::Coefficients <double>> peakingEqualizerM;
@@ -99,8 +100,12 @@ private:
     float gainH{};
     float lastSampleRate{};
     double w0{};
+    double sinw0{};
+    double cosw0{};
     double G{};
     double q{};
+    double A{};
+    double alpha{};
     double p0 {};
     double p1 {};
     double p2 {};
@@ -119,6 +124,7 @@ private:
     double b0 {};
     double b1 {};
     double b2 {};
+    double coeffs_HPF[6]{};
     double coeffs_L[6]{};
     double coeffs_LM[6]{};
     double coeffs_M[6]{};
